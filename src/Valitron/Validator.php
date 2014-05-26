@@ -108,9 +108,7 @@ class Validator
      */
     public static function lang($lang = null)
     {
-        if ($lang !== null) {
-            static::$_lang = $lang;
-        }
+        $lang !== null && static::$_lang = $lang;
         return static::$_lang ?: 'en';
     }
 
@@ -122,9 +120,7 @@ class Validator
      */
     public static function langDir($dir = null)
     {
-        if ($dir !== null) {
-            static::$_langDir = $dir;
-        }
+        $dir !== null && static::$_langDir = $dir;
         return static::$_langDir ?: dirname(dirname(__DIR__)) . '/lang';
     }
 
@@ -137,9 +133,7 @@ class Validator
      */
     protected function validateRequired($field, $value)
     {
-        if (is_null($value)) {
-            return false;
-        } elseif (is_string($value) && trim($value) === '') {
+        if (is_null($value) || (is_string($value) and trim($value) === '')) {
             return false;
         }
         return true;
@@ -329,10 +323,7 @@ class Validator
      */
     protected function validateIn($field, $value, $params)
     {
-        $isAssoc = array_values($params[0]) !== $params[0];
-        if ($isAssoc) {
-            $params[0] = array_keys($params[0]);
-        }
+        (array_values($params[0]) !== $params[0]) && $params[0] = array_keys($params[0]);
         return in_array($value, $params[0]);
     }
 
@@ -360,10 +351,7 @@ class Validator
      */
     protected function validateContains($field, $value, $params)
     {
-        if (!isset($params[0])) {
-            return false;
-        }
-        if (!is_string($params[0]) || !is_string($value)) {
+        if (!isset($params[0]) || (!is_string($params[0]) || !is_string($value))) {
             return false;
         }
         return (strpos($value, $params[0]) !== false);
@@ -547,7 +535,7 @@ class Validator
      */
     protected function validateBoolean($field, $value)
     {
-        return (is_bool($value)) ? true : false;
+        return is_bool($value) ? true : false;
     }
 
     /**
@@ -779,11 +767,9 @@ class Validator
      */
     protected function hasRule($name, $field)
     {
-        foreach ($this->_validations as $validation) {
-            if ($validation['rule'] == $name) {
-                if (in_array($field, $validation['fields'])) {
-                    return true;
-                }
+        foreach($this->_validations as $validation) {
+            if ($validation['rule'] == $name && in_array($field, $validation['fields'])) {
+                return true;
             }
         }
         return false;
@@ -870,20 +856,20 @@ class Validator
      */
     private function checkAndSetLabel($field, $msg, $params)
     {
-        if (isset($this->_labels[$field])) {
-            $msg = str_replace('{field}', $this->_labels[$field], $msg);
+        if (!isset($this->_labels[$field])) {
+            return str_replace('{field}', ucwords(str_replace('_', ' ', $field)), $msg);
+        }
 
-            if (is_array($params)) {
-                $i = 1;
-                foreach ($params as $k => $v) {
-                    $tag = '{field'. $i .'}';
-                    $label = isset($params[$k]) && !is_array($params[$k]) && isset($this->_labels[$params[$k]]) ? $this->_labels[$params[$k]] : $tag;
-                    $msg = str_replace($tag, $label, $msg);
-                    $i++;
-                }
+        $msg = str_replace('{field}', $this->_labels[$field], $msg);
+
+        if (is_array($params)) {
+            $i = 1;
+            foreach ($params as $k => $v) {
+                $tag = '{field'. $i .'}';
+                $label = isset($params[$k]) && !is_array($params[$k]) && isset($this->_labels[$params[$k]]) ? $this->_labels[$params[$k]] : $tag;
+                $msg = str_replace($tag, $label, $msg);
+                $i++;
             }
-        } else {
-            $msg = str_replace('{field}', ucwords(str_replace('_', ' ', $field)), $msg);
         }
 
         return $msg;
@@ -897,13 +883,14 @@ class Validator
     public function rules($rules)
     {
         foreach ($rules as $ruleType => $params) {
-            if (is_array($params)) {
-                foreach ($params as $innerParams) {
-                    array_unshift($innerParams, $ruleType);
-                    call_user_func_array(array($this, 'rule'), $innerParams);
-                }
-            } else {
+            if (!is_array($params)) {
                 $this->rule($ruleType, $params);
+                continue;
+            }
+
+            foreach ($params as $innerParams) {
+                array_unshift($innerParams, $ruleType);
+                call_user_func_array(array($this, "rule"), $innerParams);
             }
         }
     }
